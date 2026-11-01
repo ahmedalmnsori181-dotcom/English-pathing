@@ -1,7 +1,14 @@
-// =====================================
-// ENGLISH PATH
-// Study plan + spaced repetition
-// =====================================
+
+/* =========================================
+   ENGLISH PATH 2.0
+   Main application engine
+   Preserves old progress and storage key
+========================================= */
+
+"use strict";
+
+const STORAGE_KEY = "english_path_progress_v1";
+const TOTAL_LESSONS = 93;
 
 const categories = [
   { id: "foundation", name: "التأسيس من الصفر", count: 25 },
@@ -12,561 +19,834 @@ const categories = [
   { id: "writing", name: "الكتابة", count: 12 }
 ];
 
-const plan = [
-  [["foundation",15,16],["old","التأسيس",1,2]],
-  [["foundation",17,18],["old","التأسيس",3,4]],
-  [["foundation",19,20],["old","التأسيس",5,6]],
-  [["foundation",21,22],["old","التأسيس",7,8]],
-  [["foundation",23,25],["old","التأسيس",9,10]],
-  [["reading",6,7],["old","التأسيس",11,12]],
-  [["reading",8,9],["old","التأسيس",13,14]],
-  [["reading",10,12],["old","القراءة",1,2]],
-  [["reading",13,15],["old","القراءة",3,4]],
-  [["reading",16,17],["old","القراءة",5,5],["test","اختبار التأسيس والقراءة"]],
+const categoryMap = Object.fromEntries(
+  categories.map(category => [category.id, category])
+);
 
-  [["phonics",1,2],["listening",2,2]],
-  [["phonics",3,3],["listening",3,4]],
-  [["phonics",4,5],["listening",5,5]],
-  [["phonics",6,6],["listening",6,7]],
-  [["phonics",7,8],["listening",8,8]],
-  [["phonics",9,9],["listening",9,10]],
-  [["phonics",10,11],["listening",11,11]],
-  [["phonics",12,12],["listening",12,13]],
-  [["phonics",13,13],["listening",14,14]],
-  [["phonics",14,14],["listening",15,16]],
+const intervals = {
+  forgotten: 1,
+  hard: 3,
+  good: 7,
+  easy: 14
+};
 
-  [["conversation",1,2],["writing",1,1]],
-  [["conversation",3,3],["writing",2,3]],
-  [["conversation",4,5],["writing",4,4]],
-  [["conversation",6,6],["writing",5,6]],
-  [["conversation",7,7],["writing",7,8]],
-  [["conversation",8,8],["writing",9,10]],
-  [["conversation",9,9],["writing",11,12]],
+const ratingNames = {
+  forgotten: "لم أتذكر",
+  hard: "صعب",
+  good: "جيد",
+  easy: "سهل"
+};
 
-  [["phase","مراجعة التأسيس والقراءة"]],
-  [["phase","مراجعة الصوتيات والاستماع"]],
-  [["phase","مراجعة المحادثة والكتابة"],["test","الاختبار الشامل للمستوى الأول"]]
-];
-
-const STORAGE_KEY = "english_path_progress_v1";
-
-let data = loadData();
+/* =========================================
+   DATA AND STORAGE
+========================================= */
 
 function emptyData() {
   return {
     completed: {},
     reviews: {},
-    special: {}
+    special: {},
+    vocabulary: [],
+    activity: {},
+    achievements: []
   };
 }
 
 function loadData() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || emptyData();
-  } catch {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) return emptyData();
+
+    const parsed = JSON.parse(saved);
+
+    return {
+      ...emptyData(),
+      ...parsed,
+      completed: parsed.completed || {},
+      reviews: parsed.reviews || {},
+      special: parsed.special || {},
+      vocabulary: Array.isArray(parsed.vocabulary)
+        ? parsed.vocabulary
+        : [],
+      activity: parsed.activity || {},
+      achievements: Array.isArray(parsed.achievements)
+        ? parsed.achievements
+        : []
+    };
+  } catch (error) {
+    console.error("Could not load saved progress:", error);
     return emptyData();
   }
 }
 
+let data = loadData();
+
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  renderAll();
-}
-
-function todayISO() {
-  const d = new Date();
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, "0"),
-    String(d.getDate()).padStart(2, "0")
-  ].join("-");
-}
-
-function addDays(date, days) {
-  const d = new Date(date + "T12:00:00");
-  d.setDate(d.getDate() + days);
-
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, "0"),
-    String(d.getDate()).padStart(2, "0")
-  ].join("-");
 }
 
 function lessonKey(category, number) {
-  return category + ":" + number;
+  return `${category}:${number}`;
 }
 
-function categoryName(id) {
-  const item = categories.find(c => c.id === id);
-  return item ? item.name : id;
+/* =========================================
+   DATE HELPERS
+========================================= */
+
+function dateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
-function isCompleted(key) {
-  return !!data.completed[key];
+function addDays(dateString, days) {
+  const date = new Date(`${dateString}T12:00:00`);
+  date.setDate(date.getDate() + days);
+  return dateKey(date);
 }
 
-// -------------------------------------
-// Build tasks
-// -------------------------------------
+function formatDate(value) {
+  const date = new Date(`${value}T12:00:00`);
 
-function getDayTasks(day) {
-  return plan[day - 1].map((task, index) => {
-    if (task[0] === "old") {
-      return {
-        id: `old-${day}-${index}`,
-        type: "old",
-        title: `مراجعة ${task[1]} · ${task[2] === task[3] ? task[2] : task[2] + "–" + task[3]}`
-      };
-    }
+  if (Number.isNaN(date.getTime())) return value;
 
-    if (task[0] === "test" || task[0] === "phase") {
-      return {
-        id: `special-${day}-${index}`,
-        type: "special",
-        title: task[1]
-      };
-    }
-
-    return {
-      id: `range-${day}-${index}`,
-      type: "range",
-      category: task[0],
-      start: task[1],
-      end: task[2]
-    };
+  return date.toLocaleDateString("ar", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
   });
 }
 
-// -------------------------------------
-// Complete / undo lessons
-// -------------------------------------
+function today() {
+  return dateKey();
+}
 
-function toggleLesson(key, checked) {
+/* =========================================
+   ACTIVITY TRACKING
+========================================= */
+
+function recordActivity() {
+  const key = today();
+  data.activity[key] = (data.activity[key] || 0) + 1;
+}
+
+function getStreak() {
+  let streak = 0;
+  let cursor = new Date();
+
+  if (!data.activity[today()]) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  while (true) {
+    const key = dateKey(cursor);
+
+    if (!data.activity[key]) break;
+
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
+}
+
+function getBestStreak() {
+  const dates = Object.keys(data.activity)
+    .filter(key => data.activity[key] > 0)
+    .sort();
+
+  let best = 0;
+  let current = 0;
+  let previous = null;
+
+  dates.forEach(key => {
+    if (previous && addDays(previous, 1) === key) {
+      current++;
+    } else {
+      current = 1;
+    }
+
+    best = Math.max(best, current);
+    previous = key;
+  });
+
+  return best;
+}
+
+/* =========================================
+   STUDY PLAN - 30 DAYS
+========================================= */
+
+const plan = {};
+
+function setDay(day, tasks) {
+  plan[day] = tasks;
+}
+
+function task(category, numbers) {
+  return numbers.map(number => ({
+    category,
+    number,
+    key: lessonKey(category, number)
+  }));
+}
+
+setDay(1, [
+  ...task("foundation", [15, 16])
+]);
+
+setDay(2, [
+  ...task("foundation", [17, 18])
+]);
+
+setDay(3, [
+  ...task("foundation", [19, 20])
+]);
+
+setDay(4, [
+  ...task("foundation", [21, 22])
+]);
+
+setDay(5, [
+  ...task("foundation", [23, 24, 25])
+]);
+
+setDay(6, [
+  ...task("reading", [6, 7])
+]);
+
+setDay(7, [
+  ...task("reading", [8, 9])
+]);
+
+setDay(8, [
+  ...task("reading", [10, 11, 12])
+]);
+
+setDay(9, [
+  ...task("reading", [13, 14, 15])
+]);
+
+setDay(10, [
+  ...task("reading", [16, 17])
+]);
+
+setDay(11, [
+  ...task("phonics", [1, 2]),
+  ...task("listening", [2])
+]);
+
+setDay(12, [
+  ...task("phonics", [3]),
+  ...task("listening", [3, 4])
+]);
+
+setDay(13, [
+  ...task("phonics", [4, 5]),
+  ...task("listening", [5])
+]);
+
+setDay(14, [
+  ...task("phonics", [6]),
+  ...task("listening", [6, 7])
+]);
+
+setDay(15, [
+  ...task("phonics", [7, 8]),
+  ...task("listening", [8])
+]);
+
+setDay(16, [
+  ...task("phonics", [9]),
+  ...task("listening", [9, 10])
+]);
+
+setDay(17, [
+  ...task("phonics", [10, 11]),
+  ...task("listening", [11])
+]);
+
+setDay(18, [
+  ...task("phonics", [12]),
+  ...task("listening", [12, 13])
+]);
+
+setDay(19, [
+  ...task("phonics", [13]),
+  ...task("listening", [14])
+]);
+
+setDay(20, [
+  ...task("phonics", [14]),
+  ...task("listening", [15, 16])
+]);
+
+setDay(21, [
+  ...task("conversation", [1, 2]),
+  ...task("writing", [1])
+]);
+
+setDay(22, [
+  ...task("conversation", [3]),
+  ...task("writing", [2, 3])
+]);
+
+setDay(23, [
+  ...task("conversation", [4, 5]),
+  ...task("writing", [4])
+]);
+
+setDay(24, [
+  ...task("conversation", [6]),
+  ...task("writing", [5, 6])
+]);
+
+setDay(25, [
+  ...task("conversation", [7]),
+  ...task("writing", [7, 8])
+]);
+
+setDay(26, [
+  ...task("conversation", [8]),
+  ...task("writing", [9, 10])
+]);
+
+setDay(27, [
+  ...task("conversation", [9]),
+  ...task("writing", [11, 12])
+]);
+
+setDay(28, [
+  { special: "مراجعة شاملة للتأسيس والقراءة" }
+]);
+
+setDay(29, [
+  { special: "مراجعة شاملة للصوتيات والاستماع" }
+]);
+
+setDay(30, [
+  { special: "مراجعة المحادثة والكتابة وإجراء اختبار شامل" }
+]);
+
+/* =========================================
+   REVIEW SYSTEM
+========================================= */
+
+function ensureReviews(key, completionDate) {
+  if (data.reviews[key] && data.reviews[key].length) return;
+
+  data.reviews[key] = [
+    {
+      date: addDays(completionDate, 3),
+      stage: "الأولى",
+      done: false
+    },
+    {
+      date: addDays(completionDate, 7),
+      stage: "الثانية",
+      done: false
+    }
+  ];
+}
+
+function getAllReviews() {
+  const result = [];
+
+  Object.entries(data.reviews).forEach(([key, reviews]) => {
+    if (!Array.isArray(reviews)) return;
+
+    reviews.forEach(review => {
+      result.push({
+        key,
+        date: review.date,
+        stage: review.stage || "مراجعة",
+        done: Boolean(review.done)
+      });
+    });
+  });
+
+  return result.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function getDueReviews() {
+  return getAllReviews().filter(review =>
+    !review.done && review.date <= today()
+  );
+}
+
+function getFutureReviews() {
+  return getAllReviews().filter(review =>
+    !review.done && review.date > today()
+  );
+}
+
+function addNextReview(key, days, rating) {
+  if (!data.reviews[key]) data.reviews[key] = [];
+
+  const nextDate = addDays(today(), days);
+
+  data.reviews[key].push({
+    date: nextDate,
+    stage: `مراجعة بعد التقييم: ${ratingNames[rating]}`,
+    done: false
+  });
+}
+
+function rateReview(key, reviewDate, rating) {
+  const days = intervals[rating];
+
+  if (!days || !data.reviews[key]) return;
+
+  const review = data.reviews[key].find(item =>
+    item.date === reviewDate && !item.done
+  );
+
+  if (!review) return;
+
+  review.done = true;
+  review.rating = rating;
+  review.ratedAt = today();
+
+  addNextReview(key, days, rating);
+  recordActivity();
+  saveData();
+  renderAll();
+}
+
+function deleteReviewsForLesson(key) {
+  delete data.reviews[key];
+}
+
+/* =========================================
+   LESSON COMPLETION
+========================================= */
+
+function setLessonCompleted(key, checked) {
   if (checked) {
-    const completedDate = todayISO();
-
-    data.completed[key] = completedDate;
-
-    // Two spaced reviews: +3 days and +7 days
-    data.reviews[key] = [
-      {
-        date: addDays(completedDate, 3),
-        stage: "الأولى",
-        done: false
-      },
-      {
-        date: addDays(completedDate, 7),
-        stage: "الثانية",
-        done: false
-      }
-    ];
+    data.completed[key] = today();
+    ensureReviews(key, today());
+    recordActivity();
   } else {
     delete data.completed[key];
-    delete data.reviews[key];
+    deleteReviewsForLesson(key);
   }
 
   saveData();
+  renderAll();
 }
 
-function toggleSpecial(id, checked) {
-  data.special[id] = checked;
-  saveData();
+function completedCount() {
+  return Object.keys(data.completed).filter(key => {
+    return categoryMap[key.split(":")[0]];
+  }).length;
 }
 
-// -------------------------------------
-// Reviews
-// -------------------------------------
+function completionPercentage() {
+  return Math.round((completedCount() / TOTAL_LESSONS) * 100);
+}
 
-function getReviews() {
-  const due = [];
-  const future = [];
+/* =========================================
+   HTML SAFETY
+========================================= */
 
-  Object.entries(data.reviews).forEach(([key, items]) => {
-    items.forEach((review, index) => {
-      if (review.done) return;
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[char]);
+}
 
-      const item = { key, index, ...review };
+/* =========================================
+   NAVIGATION
+========================================= */
 
-      if (review.date <= todayISO()) {
-        due.push(item);
-      } else {
-        future.push(item);
-      }
-    });
+function showSection(sectionId) {
+  document.querySelectorAll(".page-section").forEach(section => {
+    section.classList.toggle("active", section.id === sectionId);
   });
 
-  due.sort((a, b) => a.date.localeCompare(b.date));
-  future.sort((a, b) => a.date.localeCompare(b.date));
+  document.querySelectorAll(".nav-btn").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.section === sectionId
+    );
+  });
 
-  return { due, future };
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function toggleReview(key, index, checked) {
-  if (!data.reviews[key]) return;
+document.querySelectorAll(".nav-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    showSection(button.dataset.section);
+  });
+});
 
-  data.reviews[key][index].done = checked;
-  saveData();
+document.querySelectorAll("[data-go]").forEach(button => {
+  button.addEventListener("click", () => {
+    showSection(button.dataset.go);
+  });
+});
+
+/* =========================================
+   HOME DASHBOARD
+========================================= */
+
+function renderOverview() {
+  const count = completedCount();
+  const percentage = completionPercentage();
+
+  document.getElementById("completedCount").textContent = count;
+  document.getElementById("progressPercent").textContent = `${percentage}%`;
+  document.getElementById("progressPercentCard").textContent = `${percentage}%`;
+  document.getElementById("progressText").textContent = `${count} من ${TOTAL_LESSONS}`;
+
+  document.getElementById("progressBar").style.width = `${percentage}%`;
+
+  document.getElementById("streakCount").textContent = getStreak();
+  document.getElementById("dueReviewsCount").textContent = getDueReviews().length;
+
+  document.getElementById("todayDate").textContent =
+    new Date().toLocaleDateString("ar", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
 }
 
-// -------------------------------------
-// Header progress
-// -------------------------------------
+function renderTaskItem(item) {
+  if (item.special) {
+    return `
+      <div class="task-item">
+        <span class="task-title">⭐ ${escapeHTML(item.special)}</span>
+      </div>
+    `;
+  }
 
-function renderHeader() {
-  const completed = Object.keys(data.completed).filter(
-    key => data.completed[key]
-  ).length;
+  const category = categoryMap[item.category];
+  const completed = Boolean(data.completed[item.key]);
 
-  const total = 93;
-  const percent = Math.round(completed / total * 100);
-
-  document.getElementById("completedCount").textContent = completed;
-  document.getElementById("progressPercent").textContent = percent + "%";
-  document.getElementById("progressBar").style.width = percent + "%";
-}
-
-// -------------------------------------
-// Today's tasks
-// -------------------------------------
-
-function renderToday() {
-  const day = Number(document.getElementById("daySelect").value || 1);
-  const container = document.getElementById("todayTasks");
-
-  let html = "";
-
-  getDayTasks(day).forEach(task => {
-    if (task.type === "range") {
-      for (let n = task.start; n <= task.end; n++) {
-        const key = lessonKey(task.category, n);
-        const checked = isCompleted(key);
-
-        html += `
-          <label class="task ${checked ? "done" : ""}">
-            <input type="checkbox"
-              data-lesson="${key}"
-              ${checked ? "checked" : ""}>
-
-            <span>
-              <span class="task-name">
-                ${categoryName(task.category)} — الحلقة ${n}
-              </span>
-              <small>
-                ${checked
-                  ? "مكتملة · " + data.completed[key]
-                  : "لم تكتمل بعد"}
-              </small>
-            </span>
-          </label>
-        `;
-      }
-    } else {
-      const checked = !!data.special[task.id];
-
-      html += `
-        <label class="task ${checked ? "done" : ""}">
-          <input type="checkbox"
-            data-special="${task.id}"
-            ${checked ? "checked" : ""}>
-
-          <span>
-            <span class="task-name">${task.title}</span>
-            <small>مهمة مراجعة أو اختبار</small>
+  return `
+    <div class="task-item ${completed ? "completed" : ""}">
+      <label>
+        <input
+          type="checkbox"
+          data-lesson="${escapeHTML(item.key)}"
+          ${completed ? "checked" : ""}
+        >
+        <span>
+          <span class="task-title">
+            ${escapeHTML(category.name)} - الحلقة ${item.number}
           </span>
-        </label>
-      `;
-    }
-  });
+          <span class="task-category">
+            ${completed ? "تم الإنجاز" : "لم يكتمل بعد"}
+          </span>
+        </span>
+      </label>
+    </div>
+  `;
+}
 
-  container.innerHTML = html;
+function renderTasks() {
+  const select = document.getElementById("daySelect");
+  const day = Number(select.value || 1);
+  const tasks = plan[day] || [];
 
-  container.querySelectorAll("[data-lesson]").forEach(input => {
-    input.addEventListener("change", () => {
-      toggleLesson(input.dataset.lesson, input.checked);
-    });
-  });
+  document.getElementById("todayTasks").innerHTML =
+    tasks.length
+      ? tasks.map(renderTaskItem).join("")
+      : '<p class="empty-state">لا توجد مهام لهذا اليوم.</p>';
 
-  container.querySelectorAll("[data-special]").forEach(input => {
-    input.addEventListener("change", () => {
-      toggleSpecial(input.dataset.special, input.checked);
-    });
-  });
-
-  renderTodayReviews();
+  document.getElementById("planList").innerHTML =
+    tasks.length
+      ? tasks.map(renderTaskItem).join("")
+      : '<p class="empty-state">لا توجد مهام لهذا اليوم.</p>';
 }
 
 function renderTodayReviews() {
-  const container = document.getElementById("todayReviews");
-  const { due } = getReviews();
+  const reviews = getDueReviews();
 
-  if (!due.length) {
-    container.innerHTML =
-      '<p class="empty">لا توجد مراجعات مستحقة اليوم 🎉</p>';
-    return;
-  }
-
-  container.innerHTML = due.map(item => `
-    <div class="review-item">
-      ${categoryName(item.key.split(":")[0])}
-      — الحلقة ${item.key.split(":")[1]}
-      <small>مراجعة ${item.stage} · ${item.date}</small>
-    </div>
-  `).join("");
+  document.getElementById("todayReviews").innerHTML =
+    reviews.length
+      ? reviews.slice(0, 8).map(review => `
+          <div class="review-item">
+            <div>
+              <strong>${escapeHTML(review.key)}</strong>
+              <small>${escapeHTML(review.stage)}</small>
+            </div>
+            <span class="task-category">${formatDate(review.date)}</span>
+          </div>
+        `).join("")
+      : '<p class="empty-state">رائع! لا توجد مراجعات مستحقة اليوم.</p>';
 }
 
-// -------------------------------------
-// 30-day plan
-// -------------------------------------
+/* =========================================
+   PLAN
+========================================= */
 
-function renderPlan() {
-  const container = document.getElementById("planList");
+document.getElementById("daySelect").addEventListener("change", renderTasks);
 
-  container.innerHTML = plan.map((_, index) => {
-    const day = index + 1;
-
-    const descriptions = getDayTasks(day).map(task => {
-      if (task.type === "range") {
-        return categoryName(task.category) +
-          " " + task.start + "–" + task.end;
-      }
-
-      return task.title;
-    }).join(" + ");
-
-    return `
-      <div class="day-row">
-        <div>
-          <strong>اليوم ${day}</strong>
-          <small>${descriptions}</small>
-        </div>
-
-        <button data-open-day="${day}">عرض</button>
-      </div>
-    `;
-  }).join("");
-
-  container.querySelectorAll("[data-open-day]").forEach(button => {
-    button.addEventListener("click", () => {
-      document.getElementById("daySelect").value =
-        button.dataset.openDay;
-
-      document.querySelector('[data-page="home"]').click();
-      renderToday();
-    });
-  });
-}
-
-// -------------------------------------
-// Reviews page
-// -------------------------------------
+/* =========================================
+   REVIEW DISPLAY AND RATINGS
+========================================= */
 
 function renderReviews() {
-  const container = document.getElementById("reviewList");
-  const { due, future } = getReviews();
+  const due = getDueReviews();
+  const future = getFutureReviews();
 
-  if (!due.length && !future.length) {
-    container.innerHTML =
-      '<p class="empty">لا توجد مراجعات مجدولة حتى الآن.</p>';
-    return;
-  }
+  document.getElementById("reviewDueTotal").textContent = due.length;
+  document.getElementById("reviewFutureTotal").textContent = future.length;
 
-  let html = "";
+  const allPending = [...due, ...future];
 
-  if (due.length) {
-    html += "<h3>المراجعات المستحقة</h3>";
+  document.getElementById("reviewList").innerHTML =
+    allPending.length
+      ? allPending.map(review => {
+          const isDue = review.date <= today();
 
-    html += due.map(item => `
-      <label class="review-item">
-        <input type="checkbox"
-          data-review-key="${item.key}"
-          data-review-index="${item.index}">
+          return `
+            <div class="review-item">
+              <div>
+                <strong>${escapeHTML(review.key)}</strong>
+                <div class="task-category">
+                  ${escapeHTML(review.stage)}
+                </div>
+                <small>${isDue ? "مستحقة الآن" : "موعدها " + formatDate(review.date)}</small>
+              </div>
 
-        ${categoryName(item.key.split(":")[0])}
-        — الحلقة ${item.key.split(":")[1]}
-
-        <small>مراجعة ${item.stage} · مستحقة الآن</small>
-      </label>
-    `).join("");
-  }
-
-  if (future.length) {
-    html += "<h3>المراجعات القادمة</h3>";
-
-    html += future.map(item => `
-      <div class="review-item">
-        ${categoryName(item.key.split(":")[0])}
-        — الحلقة ${item.key.split(":")[1]}
-
-        <small>مراجعة ${item.stage} · ${item.date}</small>
-      </div>
-    `).join("");
-  }
-
-  container.innerHTML = html;
-
-  container.querySelectorAll("[data-review-key]").forEach(input => {
-    input.addEventListener("change", () => {
-      toggleReview(
-        input.dataset.reviewKey,
-        Number(input.dataset.reviewIndex),
-        input.checked
-      );
-    });
-  });
+              ${isDue ? `
+                <div class="review-ratings">
+                  <button data-rate="forgotten" data-key="${escapeHTML(review.key)}" data-date="${escapeHTML(review.date)}">😵 لم أتذكر</button>
+                  <button data-rate="hard" data-key="${escapeHTML(review.key)}" data-date="${escapeHTML(review.date)}">😕 صعب</button>
+                  <button data-rate="good" data-key="${escapeHTML(review.key)}" data-date="${escapeHTML(review.date)}">🙂 جيد</button>
+                  <button data-rate="easy" data-key="${escapeHTML(review.key)}" data-date="${escapeHTML(review.date)}">😎 سهل</button>
+                </div>
+              ` : ""}
+            </div>
+          `;
+        }).join("")
+      : '<p class="empty-state">لا توجد مراجعات حالياً. أكمل درساً جديداً لتبدأ المراجعة.</p>';
 }
 
-// -------------------------------------
-// Category statistics
-// -------------------------------------
+document.getElementById("reviewList").addEventListener("click", event => {
+  const button = event.target.closest("[data-rate]");
+  if (!button) return;
 
-function renderStats() {
+  rateReview(
+    button.dataset.key,
+    button.dataset.date,
+    button.dataset.rate
+  );
+});
+
+/* =========================================
+   VOCABULARY
+========================================= */
+
+const vocabularyForm = document.getElementById("vocabularyForm");
+
+vocabularyForm.addEventListener("submit", event => {
+  event.preventDefault();
+
+  const word = document.getElementById("wordInput").value.trim();
+  const meaning = document.getElementById("meaningInput").value.trim();
+  const example = document.getElementById("exampleInput").value.trim();
+
+  if (!word || !meaning) return;
+
+  data.vocabulary.unshift({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    word,
+    meaning,
+    example,
+    createdAt: today()
+  });
+
+  recordActivity();
+  saveData();
+  vocabularyForm.reset();
+  renderVocabulary();
+  renderStatistics();
+});
+
+function renderVocabulary() {
+  const search = (
+    document.getElementById("vocabularySearch").value || ""
+  ).trim().toLowerCase();
+
+  const filtered = data.vocabulary.filter(item =>
+    item.word.toLowerCase().includes(search) ||
+    item.meaning.toLowerCase().includes(search) ||
+    (item.example || "").toLowerCase().includes(search)
+  );
+
+  document.getElementById("vocabularyCount").textContent =
+    `${data.vocabulary.length} كلمة`;
+
+  document.getElementById("statisticsVocabularyCount").textContent =
+    data.vocabulary.length;
+
+  document.getElementById("vocabularyList").innerHTML =
+    filtered.length
+      ? filtered.map(item => `
+          <div class="vocabulary-item">
+            <h4>${escapeHTML(item.word)}</h4>
+            <p>${escapeHTML(item.meaning)}</p>
+            ${item.example ? `<small>${escapeHTML(item.example)}</small>` : ""}
+            <button data-speak="${escapeHTML(item.id)}">🔊 نطق الكلمة</button>
+            <button data-delete-word="${escapeHTML(item.id)}">🗑️ حذف</button>
+          </div>
+        `).join("")
+      : '<p class="empty-state">لا توجد كلمات مطابقة للبحث.</p>';
+}
+
+document.getElementById("vocabularySearch").addEventListener(
+  "input",
+  renderVocabulary
+);
+
+document.getElementById("vocabularyList").addEventListener("click", event => {
+  const speakButton = event.target.closest("[data-speak]");
+  const deleteButton = event.target.closest("[data-delete-word]");
+
+  if (speakButton) {
+    const item = data.vocabulary.find(
+      word => word.id === speakButton.dataset.speak
+    );
+
+    if (item && "speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(item.word);
+      utterance.lang = "en-US";
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("ميزة النطق غير متاحة في هذا المتصفح.");
+    }
+  }
+
+  if (deleteButton) {
+    const confirmed = confirm("هل تريد حذف هذه الكلمة؟");
+    if (!confirmed) return;
+
+    data.vocabulary = data.vocabulary.filter(
+      word => word.id !== deleteButton.dataset.deleteWord
+    );
+
+    saveData();
+    renderVocabulary();
+    renderStatistics();
+  }
+});
+
+/* =========================================
+   STATISTICS BY COURSE
+========================================= */
+
+function renderCategoryStats() {
   const container = document.getElementById("categoryStats");
 
   container.innerHTML = categories.map(category => {
     let count = 0;
 
-    for (let n = 1; n <= category.count; n++) {
-      if (isCompleted(lessonKey(category.id, n))) count++;
+    for (let number = 1; number <= category.count; number++) {
+      if (data.completed[lessonKey(category.id, number)]) count++;
     }
 
-    const percent = Math.round(count / category.count * 100);
+    const percentage = Math.round((count / category.count) * 100);
 
     return `
-      <div class="stat-row">
-        <div>
-          <strong>${category.name}</strong>
-          <small>${count} من ${category.count} حلقة مكتملة</small>
+      <div class="category-stat">
+        <div class="category-stat-header">
+          <span>${escapeHTML(category.name)}</span>
+          <span>${count} / ${category.count} (${percentage}%)</span>
         </div>
-        <strong>${percent}%</strong>
+        <div class="category-stat-bar">
+          <div class="category-stat-fill" style="width:${percentage}%"></div>
+        </div>
       </div>
     `;
   }).join("");
 }
 
-// -------------------------------------
-// Tabs
-// -------------------------------------
+/* =========================================
+   ACHIEVEMENTS
+========================================= */
 
-document.querySelectorAll("[data-page]").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll("[data-page]").forEach(b => {
-      b.classList.toggle("active", b === button);
-    });
+const achievementDefinitions = [
+  {
+    id: "first",
+    title: "البداية القوية",
+    description: "أكمل أول درس",
+    icon: "🌱",
+    check: () => completedCount() >= 1
+  },
+  {
+    id: "five",
+    title: "أول خمس خطوات",
+    description: "أكمل 5 دروس",
+    icon: "⭐",
+    check: () => completedCount() >= 5
+  },
+  {
+    id: "ten",
+    title: "متعلم نشيط",
+    description: "أكمل 10 دروس",
+    icon: "🚀",
+    check: () => completedCount() >= 10
+  },
+  {
+    id: "twentyfive",
+    title: "ربع الطريق",
+    description: "أكمل 25 درساً",
+    icon: "🏅",
+    check: () => completedCount() >= 25
+  },
+  {
+    id: "half",
+    title: "نصف الطريق",
+    description: "أكمل 47 درساً",
+    icon: "🏆",
+    check: () => completedCount() >= 47
+  },
+  {
+    id: "complete",
+    title: "إنجاز عظيم",
+    description: "أكمل الدروس الـ93",
+    icon: "👑",
+    check: () => completedCount() >= 93
+  },
+  {
+    id: "vocab",
+    title: "جامع الكلمات",
+    description: "أضف 20 كلمة",
+    icon: "📚",
+    check: () => data.vocabulary.length >= 20
+  },
+  {
+    id: "streak",
+    title: "الاستمرارية",
+    description: "حافظ على سلسلة 7 أيام",
+    icon: "🔥",
+    check: () => getBestStreak() >= 7
+  }
+];
 
-    document.querySelectorAll(".page").forEach(page => {
-      page.classList.toggle("active", page.id === button.dataset.page);
-    });
-  });
-});
-
-// -------------------------------------
-// Day selector
-// -------------------------------------
-
-const daySelect = document.getElementById("daySelect");
-
-for (let day = 1; day <= 30; day++) {
-  const option = document.createElement("option");
-  option.value = day;
-  option.textContent = "اليوم " + day;
-  daySelect.appendChild(option);
-}
-
-daySelect.addEventListener("change", renderToday);
-
-// -------------------------------------
-// Backup export / import
-// -------------------------------------
-
-document.getElementById("exportBtn").addEventListener("click", () => {
-  const backup = {
-    app: "English Path",
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    data
-  };
-
-  const blob = new Blob(
-    [JSON.stringify(backup, null, 2)],
-    { type: "application/json" }
-  );
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "English-Path-Backup.json";
-  link.click();
-
-  URL.revokeObjectURL(url);
-});
-
-document.getElementById("importBtn").addEventListener("click", () => {
-  document.getElementById("importFile").click();
-});
-
-document.getElementById("importFile").addEventListener("change", async event => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  try {
-    const backup = JSON.parse(await file.text());
-
+function updateAchievements() {
+  achievementDefinitions.forEach(achievement => {
     if (
-      backup.app !== "English Path" ||
-      !backup.data ||
-      !backup.data.completed ||
-      !backup.data.reviews
+      achievement.check() &&
+      !data.achievements.includes(achievement.id)
     ) {
-      throw new Error("Invalid backup");
+      data.achievements.push(achievement.id);
     }
-
-    data = backup.data;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-
-    alert("تم استيراد تقدمك بنجاح.");
-    renderAll();
-
-  } catch {
-    alert("الملف غير صالح أو ليس نسخة احتياطية من English Path.");
-  }
-
-  event.target.value = "";
-});
-
-// -------------------------------------
-// Reset
-// -------------------------------------
-
-document.getElementById("resetBtn").addEventListener("click", () => {
-  if (confirm("هل أنت متأكد؟ سيتم حذف جميع الحلقات والمراجعات المسجلة.")) {
-    data = emptyData();
-    saveData();
-  }
-});
-
-// -------------------------------------
-// Render all
-// -------------------------------------
-
-function renderAll() {
-  renderHeader();
-  renderToday();
-  renderReviews();
-  renderStats();
-}
-
-renderPlan();
-renderAll();
-
-// -------------------------------------
-// Offline support
-// -------------------------------------
-
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js")
-      .catch(error => console.log("Service Worker:", error));
   });
 }
+
+function renderAchievements() {
+  upda
