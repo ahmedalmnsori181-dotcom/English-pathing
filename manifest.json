@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "English Path - مسارك للإنجليزية",
+  "short_name": "English Path",
+  "description": "متابعة خطة تعلم الإنجليزية والمراجعات المتباعدة",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6fb",
+  "theme_color": "#14243a",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

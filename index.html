@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14243a">
+  <meta name="description" content="English Path - خطتك اليومية لتعلم الإنجليزية">
+
+  <title>English Path</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+</head>
+<body>
+
+<header class="hero">
+  <div class="brand">✦ English Path</div>
+  <p>خطوتك اليومية نحو إتقان الإنجليزية</p>
+
+  <div class="stats">
+    <div><strong id="completedCount">0</strong><span>حلقة مكتملة</span></div>
+    <div><strong>93</strong><span>إجمالي الحلقات</span></div>
+    <div><strong id="progressPercent">0%</strong><span>نسبة الإنجاز</span></div>
+  </div>
+
+  <div class="progress-track">
+    <div id="progressBar"></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-page="home">الرئيسية</button>
+  <button data-page="plan">خطة 30 يوماً</button>
+  <button data-page="reviews">المراجعات</button>
+  <button data-page="settings">التقدم والنسخ</button>
+</nav>
+
+<main>
+
+  <section id="home" class="page active">
+    <div class="card">
+      <h2>📚 مهام اليوم</h2>
+      <p class="muted">اختر اليوم الذي تريد عرض مهامه.</p>
+
+      <select id="daySelect" class="field"></select>
+
+      <div id="todayTasks"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔁 مراجعات مستحقة اليوم</h2>
+      <div id="todayReviews"></div>
+    </div>
+  </section>
+
+  <section id="plan" class="page">
+    <div class="card">
+      <h2>🗓️ خطة الدراسة الكاملة</h2>
+      <p class="muted">اضغط على أي يوم لعرض مهامه.</p>
+      <div id="planList"></div>
+    </div>
+  </section>
+
+  <section id="reviews" class="page">
+    <div class="card">
+      <h2>🔁 نظام المراجعة المتباعدة</h2>
+      <p class="muted">
+        عند إكمال حلقة جديدة، تُضاف مراجعتان تلقائياً:
+        بعد 3 أيام وبعد 7 أيام.
+      </p>
+      <div id="reviewList"></div>
+    </div>
+  </section>
+
+  <section id="settings" class="page">
+    <div class="card">
+      <h2>📊 تقدمك حسب الكورس</h2>
+      <div id="categoryStats"></div>
+    </div>
+
+    <div class="card">
+      <h2>💾 النسخ الاحتياطي</h2>
+      <p class="muted">
+        احتفظ بنسخة من تقدمك حتى لا تفقده عند تغيير الهاتف
+        أو المتصفح.
+      </p>
+
+      <button id="exportBtn" class="btn">تصدير نسخة احتياطية</button>
+      <button id="importBtn" class="btn secondary">استيراد نسخة احتياطية</button>
+      <input type="file" id="importFile" accept=".json" hidden>
+
+      <button id="resetBtn" class="btn danger">مسح جميع البيانات</button>
+    </div>
+
+    <div class="card">
+      <h2>ℹ️ معلومات التطبيق</h2>
+      <p class="muted">
+        English Path أداة شخصية لمتابعة دراسة المستوى الأول
+        من منهج ZAmericanEnglish.
+      </p>
+      <p class="muted">
+        المراجعات تظهر داخل التطبيق عند فتحه. هذه النسخة
+        لا ترسل إشعارات هاتف فعلية.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  English Path · رحلتك لتعلم الإنجليزية
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
