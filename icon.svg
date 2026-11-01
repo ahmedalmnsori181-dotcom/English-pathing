@@ -1,11 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="110" fill="#14243a"/>
-  <rect x="55" y="55" width="402" height="402" rx="85" fill="#3569d4"/>
-  <path d="M256 185v185" stroke="white" stroke-width="17" stroke-linecap="round"/>
-  <path d="M256 205c-50-35-95-35-135-10v145c45-25 90-25 135 10"
-        fill="none" stroke="white" stroke-width="17" stroke-linejoin="round"/>
-  <path d="M256 205c50-35 95-35 135-10v145c-45-25-90-25-135 10"
-        fill="none" stroke="white" stroke-width="17" stroke-linejoin="round"/>
-  <path d="M370 92l12 28 30 12-30 12-12 29-12-29-29-12 29-12z"
-        fill="#ffdc7d"/>
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512"
+     width="512"
+     height="512">
+
+  <defs>
+    <linearGradient id="background"
+                    x1="0" y1="0"
+                    x2="1" y2="1">
+      <stop offset="0%" stop-color="#172b50"/>
+      <stop offset="100%" stop-color="#101b35"/>
+    </linearGradient>
+
+    <linearGradient id="book"
+                    x1="0" y1="0"
+                    x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dce8ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512"
+        height="512"
+        rx="112"
+        fill="url(#background)"/>
+
+  <!-- Decorative circle -->
+  <circle cx="256"
+          cy="235"
+          r="165"
+          fill="#ffffff"
+          opacity="0.06"/>
+
+  <!-- Open book -->
+  <path d="M256 190
+           C205 150 135 145 85 165
+           L85 340
+           C145 320 210 330 256 375
+           Z"
+        fill="url(#book)"/>
+
+  <path d="M256 190
+           C307 150 377 145 427 165
+           L427 340
+           C367 320 302 330 256 375
+           Z"
+        fill="#ffffff"/>
+
+  <!-- Book center -->
+  <path d="M256 190 L256 375"
+        stroke="#4b83e6"
+        stroke-width="9"
+        stroke-linecap="round"/>
+
+  <!-- Page lines -->
+  <g fill="none"
+     stroke="#91a8cf"
+     stroke-width="8"
+     stroke-linecap="round">
+
+    <path d="M120 205 Q180 190 220 215"/>
+    <path d="M120 245 Q180 230 220 255"/>
+    <path d="M120 285 Q180 270 220 295"/>
+
+    <path d="M292 215 Q345 190 392 205"/>
+    <path d="M292 255 Q345 230 392 245"/>
+    <path d="M292 295 Q345 270 392 285"/>
+
+  </g>
+
+  <!-- Learning symbol -->
+  <circle cx="256"
+          cy="105"
+          r="35"
+          fill="#4b83e6"/>
+
+  <path d="M239 105 L251 117 L275 91"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="10"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- App name -->
+  <text x="256"
+        y="445"
+        text-anchor="middle"
+        font-family="Arial, sans-serif"
+        font-size="39"
+        font-weight="bold"
+        fill="#ffffff">
+    ENGLISH PATH
+  </text>
+
 </svg>
