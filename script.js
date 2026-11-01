@@ -850,3 +850,28 @@ function updateAchievements() {
 
 function renderAchievements() {
   upda
+/* =========================================
+   NAVIGATION COMPATIBILITY FIX
+========================================= */
+
+document.querySelectorAll("[data-page], [data-section]").forEach(button => {
+  button.addEventListener("click", () => {
+    const target = button.dataset.section || button.dataset.page;
+
+    if (!target) return;
+
+    document.querySelectorAll(".page, .page-section").forEach(page => {
+      page.classList.toggle("active", page.id === target);
+    });
+
+    document.querySelectorAll("[data-page], [data-section]").forEach(nav => {
+      nav.classList.toggle("active", nav === button);
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  });
+});
+   
