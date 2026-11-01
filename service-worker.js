@@ -1,6 +1,15 @@
-const CACHE_NAME = "english-path-v1";
 
-const FILES_TO_CACHE = [
+/* =========================================
+   ENGLISH PATH 2.0
+   Service Worker
+   Offline support and cache management
+========================================= */
+
+"use strict";
+
+const CACHE_NAME = "english-path-v2";
+
+const APP_FILES = [
   "./",
   "./index.html",
   "./style.css",
@@ -9,49 +18,115 @@ const FILES_TO_CACHE = [
   "./icon.svg"
 ];
 
+/* =========================================
+   INSTALL
+========================================= */
+
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(FILES_TO_CACHE))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(async cache => {
+      await Promise.all(
+        APP_FILES.map(async file => {
+          try {
+            await cache.add(file);
+          } catch (error) {
+            console.warn("Could not cache:", file, error);
+          }
+        })
+      );
+    })
   );
+
+  self.skipWaiting();
 });
+
+/* =========================================
+   ACTIVATE
+========================================= */
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+        cacheNames
+          .filter(name =>
+            name.startsWith("english-path-") &&
+            name !== CACHE_NAME
+          )
+          .map(name => caches.delete(name))
       );
-    }).then(() => self.clients.claim())
+    })
   );
+
+  self.clients.claim();
 });
 
+/* =========================================
+   FETCH
+========================================= */
+
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
+  const request = event.request;
 
-  const url = new URL(event.request.url);
+  if (request.method !== "GET") return;
 
+  const url = new URL(request.url);
+
+  // لا نخزن طلبات المواقع الخارجية مثل YouTube
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
+  // معالجة التنقل بين صفحات التطبيق
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.ok) {
+            const copy = response.clone();
 
-      return fetch(event.request).then(response => {
-        if (response && response.ok) {
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put("./index.html", copy);
+            });
+          }
+
+          return response;
+        })
+        .catch(async () => {
+          return (
+            await caches.match("./index.html")
+          ) || new Response(
+            "English Path is currently unavailable offline.",
+            {
+              status: 503,
+              headers: {
+                "Content-Type": "text/plain; charset=utf-8"
+              }
+            }
+          );
+        })
+    );
+
+    return;
+  }
+
+  // ملفات التطبيق: نستخدم النسخة المخزنة أولاً
+  event.respondWith(
+    caches.match(request).then(cachedResponse => {
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(request).then(response => {
+        if (
+          response &&
+          response.ok &&
+          response.type === "basic"
+        ) {
           const copy = response.clone();
 
           caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, copy);
+            cache.put(request, copy);
           });
         }
 
         return response;
-      }).catch(() => {
-        return caches.match("./index.html");
       });
     })
   );
