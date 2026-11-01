@@ -2,116 +2,482 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#14243a">
-  <meta name="description" content="English Path - خطتك اليومية لتعلم الإنجليزية">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101b35">
+  <meta name="description" content="English Path - خطتك الذكية لتعلم اللغة الإنجليزية">
+  <title>English Path | رحلتك لتعلم الإنجليزية</title>
 
-  <title>English Path</title>
-
-  <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-<header class="hero">
-  <div class="brand">✦ English Path</div>
-  <p>خطوتك اليومية نحو إتقان الإنجليزية</p>
+  <div class="app-container">
 
-  <div class="stats">
-    <div><strong id="completedCount">0</strong><span>حلقة مكتملة</span></div>
-    <div><strong>93</strong><span>إجمالي الحلقات</span></div>
-    <div><strong id="progressPercent">0%</strong><span>نسبة الإنجاز</span></div>
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">📘</div>
+        <div>
+          <h1>English Path</h1>
+          <p>رحلتك نحو إتقان الإنجليزية</p>
+        </div>
+      </div>
+
+      <div class="header-progress">
+        <span>إنجازك الكلي</span>
+        <strong id="progressPercent">0%</strong>
+      </div>
+    </header>
+
+    <!-- MAIN NAVIGATION -->
+    <nav class="main-nav" aria-label="القائمة الرئيسية">
+      <button class="nav-btn active" data-section="home">🏠 الرئيسية</button>
+      <button class="nav-btn" data-section="plan">📅 الخطة</button>
+      <button class="nav-btn" data-section="reviews">🔁 المراجعات</button>
+      <button class="nav-btn" data-section="vocabulary">📚 المفردات</button>
+      <button class="nav-btn" data-section="statistics">📊 الإحصائيات</button>
+      <button class="nav-btn" data-section="settings">⚙️ الإعدادات</button>
+    </nav>
+
+    <main>
+
+      <!-- HOME -->
+      <section id="home" class="page-section active">
+
+        <div class="welcome-card">
+          <div>
+            <span class="eyebrow">مرحباً بك في رحلتك</span>
+            <h2>خطوة صغيرة كل يوم تصنع فرقاً كبيراً!</h2>
+            <p>استمر في التعلم ولا تتوقف عن التقدم.</p>
+          </div>
+          <div class="welcome-illustration">🎯</div>
+        </div>
+
+        <!-- OVERVIEW -->
+        <div class="overview-grid">
+
+          <article class="stat-card">
+            <span class="stat-icon">✅</span>
+            <span class="stat-label">الدروس المكتملة</span>
+            <strong id="completedCount">0</strong>
+            <small>من أصل 93 درساً</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon">📈</span>
+            <span class="stat-label">نسبة الإنجاز</span>
+            <strong id="progressPercentCard">0%</strong>
+            <small>من المنهج الكامل</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon">🔥</span>
+            <span class="stat-label">أيام الاستمرار</span>
+            <strong id="streakCount">0</strong>
+            <small>يوم متواصل</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon">🔁</span>
+            <span class="stat-label">مراجعات مستحقة</span>
+            <strong id="dueReviewsCount">0</strong>
+            <small>تحتاج إلى مراجعتها</small>
+          </article>
+
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="panel">
+          <div class="panel-heading">
+            <h3>تقدمك في المنهج</h3>
+            <span id="progressText">0 من 93</span>
+          </div>
+
+          <div class="progress-track">
+            <div class="progress-fill" id="progressBar"></div>
+          </div>
+        </div>
+
+        <!-- DAILY TASKS -->
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <h3>🎯 مهام اليوم</h3>
+              <p>أنجز مهامك اليومية واستمر في التقدم</p>
+            </div>
+            <span class="date-label" id="todayDate"></span>
+          </div>
+
+          <div id="todayTasks" class="task-list">
+            <p class="empty-state">جاري تحميل مهام اليوم...</p>
+          </div>
+        </div>
+
+        <!-- DAILY REVIEWS -->
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <h3>🔁 مراجعات اليوم</h3>
+              <p>راجع ما تعلمته حتى لا تنساه</p>
+            </div>
+          </div>
+
+          <div id="todayReviews" class="review-list">
+            <p class="empty-state">لا توجد مراجعات حالياً.</p>
+          </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="panel">
+          <h3>⚡ الوصول السريع</h3>
+
+          <div class="quick-actions">
+            <button class="quick-action" data-go="reviews">
+              <span>🔁</span>
+              المراجعة الذكية
+            </button>
+
+            <button class="quick-action" data-go="vocabulary">
+              <span>📚</span>
+              دفتر المفردات
+            </button>
+
+            <button class="quick-action" data-go="statistics">
+              <span>📊</span>
+              إحصائياتي
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- STUDY PLAN -->
+      <section id="plan" class="page-section">
+
+        <div class="page-heading">
+          <span class="eyebrow">خطة الدراسة</span>
+          <h2>📅 خطة الـ30 يوماً</h2>
+          <p>اتبع ترتيب الدروس لإنهاء المستوى الأول.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading">
+            <h3>اختر يوم الدراسة</h3>
+          </div>
+
+          <select id="daySelect" class="form-control">
+            <option value="1">اليوم الأول</option>
+            <option value="2">اليوم الثاني</option>
+            <option value="3">اليوم الثالث</option>
+            <option value="4">اليوم الرابع</option>
+            <option value="5">اليوم الخامس</option>
+            <option value="6">اليوم السادس</option>
+            <option value="7">اليوم السابع</option>
+            <option value="8">اليوم الثامن</option>
+            <option value="9">اليوم التاسع</option>
+            <option value="10">اليوم العاشر</option>
+            <option value="11">اليوم الحادي عشر</option>
+            <option value="12">اليوم الثاني عشر</option>
+            <option value="13">اليوم الثالث عشر</option>
+            <option value="14">اليوم الرابع عشر</option>
+            <option value="15">اليوم الخامس عشر</option>
+            <option value="16">اليوم السادس عشر</option>
+            <option value="17">اليوم السابع عشر</option>
+            <option value="18">اليوم الثامن عشر</option>
+            <option value="19">اليوم التاسع عشر</option>
+            <option value="20">اليوم العشرون</option>
+            <option value="21">اليوم الحادي والعشرون</option>
+            <option value="22">اليوم الثاني والعشرون</option>
+            <option value="23">اليوم الثالث والعشرون</option>
+            <option value="24">اليوم الرابع والعشرون</option>
+            <option value="25">اليوم الخامس والعشرون</option>
+            <option value="26">اليوم السادس والعشرون</option>
+            <option value="27">اليوم السابع والعشرون</option>
+            <option value="28">اليوم الثامن والعشرون</option>
+            <option value="29">اليوم التاسع والعشرون</option>
+            <option value="30">اليوم الثلاثون</option>
+          </select>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading">
+            <h3>دروس اليوم المختار</h3>
+          </div>
+          <div id="planList" class="task-list">
+            <p class="empty-state">جاري تحميل الخطة...</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- SMART REVIEWS -->
+      <section id="reviews" class="page-section">
+
+        <div class="page-heading">
+          <span class="eyebrow">التكرار المتباعد</span>
+          <h2>🔁 المراجعة الذكية</h2>
+          <p>راجع دروسك في الوقت المناسب لترسيخ المعلومات في ذاكرتك.</p>
+        </div>
+
+        <div class="overview-grid">
+          <article class="stat-card">
+            <span class="stat-icon">⏰</span>
+            <span class="stat-label">مستحقة الآن</span>
+            <strong id="reviewDueTotal">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon">📆</span>
+            <span class="stat-label">مراجعات قادمة</span>
+            <strong id="reviewFutureTotal">0</strong>
+          </article>
+        </div>
+
+        <div class="panel">
+          <h3>كيف تتذكر الدرس؟</h3>
+          <p class="helper-text">
+            اختر تقييمك الحقيقي بعد مراجعة الدرس. سيحدد التطبيق موعد المراجعة التالية.
+          </p>
+
+          <div class="rating-guide">
+            <div>😵 لم أتذكر <span>بعد يوم</span></div>
+            <div>😕 صعب <span>بعد 3 أيام</span></div>
+            <div>🙂 جيد <span>بعد 7 أيام</span></div>
+            <div>😎 سهل <span>بعد 14 يوماً</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading">
+            <h3>المراجعات المستحقة</h3>
+          </div>
+
+          <div id="reviewList" class="review-list">
+            <p class="empty-state">جاري تحميل المراجعات...</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- VOCABULARY -->
+      <section id="vocabulary" class="page-section">
+
+        <div class="page-heading">
+          <span class="eyebrow">تعلم كلمات جديدة</span>
+          <h2>📚 دفتر المفردات</h2>
+          <p>اجمع الكلمات التي تتعلمها وراجعها باستمرار.</p>
+        </div>
+
+        <div class="panel">
+          <h3>➕ أضف كلمة جديدة</h3>
+
+          <form id="vocabularyForm">
+
+            <label for="wordInput">الكلمة الإنجليزية</label>
+            <input
+              type="text"
+              id="wordInput"
+              class="form-control"
+              placeholder="مثال: Beautiful"
+              required
+              autocomplete="off"
+            >
+
+            <label for="meaningInput">المعنى بالعربية</label>
+            <input
+              type="text"
+              id="meaningInput"
+              class="form-control"
+              placeholder="مثال: جميل"
+              required
+            >
+
+            <label for="exampleInput">مثال على الكلمة (اختياري)</label>
+            <textarea
+              id="exampleInput"
+              class="form-control"
+              rows="3"
+              placeholder="She has a beautiful smile."
+            ></textarea>
+
+            <button type="submit" class="primary-btn">
+              إضافة إلى قاموس المفردات
+            </button>
+
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading">
+            <h3>كلماتي المحفوظة</h3>
+            <strong id="vocabularyCount">0 كلمة</strong>
+          </div>
+
+          <input
+            type="search"
+            id="vocabularySearch"
+            class="form-control"
+            placeholder="ابحث عن كلمة أو معناها..."
+          >
+
+          <div id="vocabularyList" class="vocabulary-list">
+            <p class="empty-state">لم تضف كلمات بعد.</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- STATISTICS -->
+      <section id="statistics" class="page-section">
+
+        <div class="page-heading">
+          <span class="eyebrow">رحلتك بالأرقام</span>
+          <h2>📊 إحصائيات التقدم</h2>
+          <p>تابع إنجازاتك واعرف مدى تطور مستواك.</p>
+        </div>
+
+        <div class="overview-grid">
+          <article class="stat-card">
+            <span class="stat-icon">📘</span>
+            <span class="stat-label">إجمالي الدروس</span>
+            <strong>93</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon">🏆</span>
+            <span class="stat-label">الإنجازات</span>
+            <strong id="achievementCount">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon">📚</span>
+            <span class="stat-label">المفردات</span>
+            <strong id="statisticsVocabularyCount">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon">🔥</span>
+            <span class="stat-label">أفضل سلسلة</span>
+            <strong id="bestStreak">0</strong>
+          </article>
+        </div>
+
+        <div class="panel">
+          <h3>تقدمك حسب الكورس</h3>
+          <div id="categoryStats" class="category-stats">
+            <p class="empty-state">جاري حساب الإحصائيات...</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>🏅 إنجازاتي</h3>
+          <div id="achievementsList" class="achievement-list">
+            <p class="empty-state">ستظهر إنجازاتك هنا.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>📅 نشاطك خلال آخر 28 يوماً</h3>
+          <div id="activityCalendar" class="activity-calendar">
+            <p class="empty-state">جاري تحميل سجل النشاط...</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settings" class="page-section">
+
+        <div class="page-heading">
+          <span class="eyebrow">إدارة التطبيق</span>
+          <h2>⚙️ الإعدادات والنسخ الاحتياطي</h2>
+          <p>حافظ على بياناتك وتقدمك في التعلم.</p>
+        </div>
+
+        <div class="panel">
+          <h3>💾 النسخ الاحتياطي</h3>
+          <p class="helper-text">
+            احفظ نسخة من تقدمك ومفرداتك ومراجعاتك لاستعادتها عند الحاجة.
+          </p>
+
+          <div class="settings-actions">
+            <button id="exportBtn" class="primary-btn">
+              📥 تصدير نسخة احتياطية
+            </button>
+
+            <button id="importBtn" class="secondary-btn">
+              📤 استعادة نسخة احتياطية
+            </button>
+
+            <input
+              type="file"
+              id="importFile"
+              accept=".json,application/json"
+              hidden
+            >
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>🔔 التذكيرات</h3>
+          <p class="helper-text">
+            المراجعات تظهر داخل التطبيق عند فتحه. الإشعارات الهاتفية تحتاج إلى دعم وإعداد إضافي.
+          </p>
+        </div>
+
+        <div class="panel">
+          <h3>📱 معلومات التطبيق</h3>
+          <div class="info-row">
+            <span>اسم التطبيق</span>
+            <strong>English Path</strong>
+          </div>
+          <div class="info-row">
+            <span>إجمالي الدروس</span>
+            <strong>93 درساً</strong>
+          </div>
+          <div class="info-row">
+            <span>مدة الخطة</span>
+            <strong>30 يوماً</strong>
+          </div>
+          <div class="info-row">
+            <span>الإصدار</span>
+            <strong>2.0</strong>
+          </div>
+        </div>
+
+        <div class="panel danger-panel">
+          <h3>⚠️ منطقة الخطر</h3>
+          <p class="helper-text">
+            إعادة ضبط البيانات ستحذف تقدمك ومراجعاتك ومفرداتك من هذا الجهاز.
+          </p>
+          <button id="resetBtn" class="danger-btn">
+            إعادة ضبط جميع البيانات
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div class="footer-logo">📘 English Path</div>
+      <p>تعلم اليوم، وتحدث بطلاقة غداً.</p>
+      <small>جميع الحقوق محفوظة © English Path 2026</small>
+    </footer>
+
   </div>
 
-  <div class="progress-track">
-    <div id="progressBar"></div>
-  </div>
-</header>
+  <!-- APPLICATION SCRIPT -->
+  <script src="script.js"></script>
 
-<nav class="tabs">
-  <button class="active" data-page="home">الرئيسية</button>
-  <button data-page="plan">خطة 30 يوماً</button>
-  <button data-page="reviews">المراجعات</button>
-  <button data-page="settings">التقدم والنسخ</button>
-</nav>
-
-<main>
-
-  <section id="home" class="page active">
-    <div class="card">
-      <h2>📚 مهام اليوم</h2>
-      <p class="muted">اختر اليوم الذي تريد عرض مهامه.</p>
-
-      <select id="daySelect" class="field"></select>
-
-      <div id="todayTasks"></div>
-    </div>
-
-    <div class="card">
-      <h2>🔁 مراجعات مستحقة اليوم</h2>
-      <div id="todayReviews"></div>
-    </div>
-  </section>
-
-  <section id="plan" class="page">
-    <div class="card">
-      <h2>🗓️ خطة الدراسة الكاملة</h2>
-      <p class="muted">اضغط على أي يوم لعرض مهامه.</p>
-      <div id="planList"></div>
-    </div>
-  </section>
-
-  <section id="reviews" class="page">
-    <div class="card">
-      <h2>🔁 نظام المراجعة المتباعدة</h2>
-      <p class="muted">
-        عند إكمال حلقة جديدة، تُضاف مراجعتان تلقائياً:
-        بعد 3 أيام وبعد 7 أيام.
-      </p>
-      <div id="reviewList"></div>
-    </div>
-  </section>
-
-  <section id="settings" class="page">
-    <div class="card">
-      <h2>📊 تقدمك حسب الكورس</h2>
-      <div id="categoryStats"></div>
-    </div>
-
-    <div class="card">
-      <h2>💾 النسخ الاحتياطي</h2>
-      <p class="muted">
-        احتفظ بنسخة من تقدمك حتى لا تفقده عند تغيير الهاتف
-        أو المتصفح.
-      </p>
-
-      <button id="exportBtn" class="btn">تصدير نسخة احتياطية</button>
-      <button id="importBtn" class="btn secondary">استيراد نسخة احتياطية</button>
-      <input type="file" id="importFile" accept=".json" hidden>
-
-      <button id="resetBtn" class="btn danger">مسح جميع البيانات</button>
-    </div>
-
-    <div class="card">
-      <h2>ℹ️ معلومات التطبيق</h2>
-      <p class="muted">
-        English Path أداة شخصية لمتابعة دراسة المستوى الأول
-        من منهج ZAmericanEnglish.
-      </p>
-      <p class="muted">
-        المراجعات تظهر داخل التطبيق عند فتحه. هذه النسخة
-        لا ترسل إشعارات هاتف فعلية.
-      </p>
-    </div>
-  </section>
-
-</main>
-
-<footer>
-  English Path · رحلتك لتعلم الإنجليزية
-</footer>
-
-<script src="script.js"></script>
 </body>
-</html>
+                                 </html>
+                                 
