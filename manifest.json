@@ -1,19 +1,24 @@
+
 {
   "id": "./",
-  "name": "English Path - مسارك للإنجليزية",
+  "name": "English Path - تعلم الإنجليزية",
   "short_name": "English Path",
-  "description": "متابعة خطة تعلم الإنجليزية والمراجعات المتباعدة",
+  "description": "رحلتك الذكية لتعلم اللغة الإنجليزية ومتابعة تقدمك ومراجعة المفردات",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f3f6fb",
-  "theme_color": "#14243a",
+  "background_color": "#f4f6fb",
+  "theme_color": "#101b35",
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
-      "src": "./icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
